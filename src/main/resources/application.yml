@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: driver-matching-service
+  webflux:
+    base-path: /api/matching
+server:
+  port: 8081
+
+services:
+  location-service:
+    base-url: http://localhost:8080
+    timeout: 5000
+  messaging-service:
+    base-url: http://localhost:8082
+    driver-response-timeout: 15000
+
+matching:
+  max-drivers-to-try: 10
+  search-radius-km: 10
+  delay-between-attempts-ms: 1000
+
+logging:
+  level:
+    com.example: DEBUG
