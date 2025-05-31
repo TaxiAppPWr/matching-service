@@ -4,8 +4,9 @@ import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import org.taxiapp.matching.dto.driver.DriverConfirmationRequest
 import org.taxiapp.matching.dto.matching.MatchingRequest
-import org.taxiapp.matching.dto.matching.MatchingResponse
+import org.taxiapp.matching.dto.matching.MatchingStartedResponse
 import org.taxiapp.matching.service.DriverMatchingService
 
 
@@ -16,43 +17,55 @@ class MatchingController(
 ) {
 
     @PostMapping("/find-driver")
-    suspend fun findDriver(@Valid @RequestBody request: MatchingRequest): ResponseEntity<MatchingResponse> {
-        val response = matchingService.findDriver(request)
-        return ResponseEntity.ok(response)
+    fun findDriver(@Valid @RequestBody request: MatchingRequest): ResponseEntity<MatchingStartedResponse> {
+        val response = matchingService.startMatching(request)
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(response)
     }
 
-    @DeleteMapping("/{matchingId}")
-    suspend fun cancelMatching(@PathVariable matchingId: String): ResponseEntity<Map<String, Any>> {
-        val cancelled = matchingService.cancelMatching(matchingId)
-        return if (cancelled) {
+    @PostMapping("/confirm")
+    fun confirmDriver(@Valid @RequestBody confirmation: DriverConfirmationRequest): ResponseEntity<Map<String, Any>> {
+        val confirmed = matchingService.confirmDriver(confirmation)
+
+        return if (confirmed) {
             ResponseEntity.ok(mapOf(
-                "matchingId" to matchingId,
-                "status" to "CANCELLED",
-                "message" to "Matching process cancelled successfully"
+                "success" to true,
+                "message" to "Confirmation processed"
             ))
         } else {
-            ResponseEntity.status(HttpStatus.NOT_FOUND).body(mapOf(
-                "error" to "Matching session not found",
-                "matchingId" to matchingId
+            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(mapOf(
+                "success" to false,
+                "error" to "Invalid confirmation"
             ))
         }
     }
 
-    @GetMapping("/{matchingId}/status")
-    fun getMatchingStatus(@PathVariable matchingId: String): ResponseEntity<Any> {
-        val session = matchingService.getMatchingStatus(matchingId)
-        return if (session != null) {
+    @GetMapping("/{rideId}/status")
+    fun getMatchingStatus(@PathVariable rideId: Long): ResponseEntity<Any> {
+        val status = matchingService.getMatchingStatus(rideId)
+
+        return if (status != null) {
+            ResponseEntity.ok(status)
+        } else {
+            ResponseEntity.status(HttpStatus.NOT_FOUND).body(mapOf(
+                "error" to "Matching not found",
+                "rideId" to rideId
+            ))
+        }
+    }
+
+    @DeleteMapping("/{rideId}")
+    fun cancelMatching(@PathVariable rideId: Long): ResponseEntity<Map<String, Any>> {
+        val cancelled = matchingService.cancelMatching(rideId)
+
+        return if (cancelled) {
             ResponseEntity.ok(mapOf(
-                "matchingId" to session.matchingId,
-                "rideId" to session.request.rideId,
-                "status" to "IN_PROGRESS",
-                "attemptedDrivers" to session.attempts.size,
-                "elapsedTimeMs" to (System.currentTimeMillis() - session.startTime)
+                "success" to true,
+                "message" to "Matching cancelled"
             ))
         } else {
             ResponseEntity.status(HttpStatus.NOT_FOUND).body(mapOf(
-                "error" to "Matching session not found",
-                "matchingId" to matchingId
+                "success" to false,
+                "error" to "Matching not found"
             ))
         }
     }

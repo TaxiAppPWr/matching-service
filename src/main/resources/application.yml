@@ -1,23 +1,35 @@
 spring:
   application:
     name: driver-matching-service
-  webflux:
-    base-path: /api/matching
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
 server:
-  port: 8081
+  port: 8082
 
 services:
-  location-service:
+  driver-service:
     base-url: http://localhost:8080
     timeout: 5000
   messaging-service:
-    base-url: http://localhost:8082
-    driver-response-timeout: 15000
+    base-url: http://localhost:8081
 
 matching:
   max-drivers-to-try: 10
   search-radius-km: 10
+  driver-confirmation-timeout-seconds: 30
   delay-between-attempts-ms: 1000
+
+rabbitmq:
+  exchange:
+    driver-matching: driver.matching.exchange
+  routing-key:
+    driver-matching: driver.matching
+  queue:
+    driver-matching: driver.matching.queue
 
 logging:
   level:

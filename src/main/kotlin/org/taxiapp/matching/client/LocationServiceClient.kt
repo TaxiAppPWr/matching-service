@@ -1,4 +1,4 @@
-package org.taxiapp.matching.clients
+package org.taxiapp.matching.client
 
 import kotlinx.coroutines.reactor.awaitSingle
 import org.springframework.stereotype.Component
@@ -7,19 +7,16 @@ import org.springframework.http.MediaType
 import org.taxiapp.matching.dto.driver.NearbyDriver
 import org.taxiapp.matching.dto.driver.NearbyDriversRequest
 import org.springframework.web.reactive.function.client.WebClient
-import org.springframework.web.reactive.function.client.awaitBody
 import java.time.Duration
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @Component
 class LocationServiceClient(
     webClientBuilder: WebClient.Builder,
-    @Value("\${services.location-service.base-url}") private val baseUrl: String,
-    @Value("\${services.location-service.timeout}") private val timeout: Long
+    @Value("\${services.driver-service.base-url}") private val baseUrl: String,
+    @Value("\${services.driver-service.timeout}") private val timeout: Long
 ) {
-    private val webClient = webClientBuilder
-        .baseUrl(baseUrl)
-        .build()
+    private val webClient = webClientBuilder.baseUrl(baseUrl).build()
 
     suspend fun getNearbyDrivers(request: NearbyDriversRequest): List<NearbyDriver> {
         return webClient.post()
@@ -33,10 +30,10 @@ class LocationServiceClient(
                 @Suppress("UNCHECKED_CAST")
                 (list as List<Map<String, Any>>).map { map ->
                     NearbyDriver(
+                        driverId = (map["id"] as String),
                         distance = (map["distance"] as Number).toDouble(),
-                        id = (map["id"] as Number).toLong(),
                         isActive = map["isActive"] as Boolean,
-                        lastPing = LocalDateTime.parse(map["lastPing"] as String),
+                        lastPing = OffsetDateTime.parse(map["lastPing"] as String).toLocalDateTime(),
                         latitude = (map["latitude"] as Number).toDouble(),
                         longitude = (map["longitude"] as Number).toDouble(),
                     )

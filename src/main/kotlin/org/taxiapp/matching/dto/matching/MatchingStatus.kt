@@ -2,8 +2,9 @@ package org.taxiapp.matching.dto.matching
 
 enum class MatchingStatus {
     IN_PROGRESS,
-    DRIVER_FOUND,
+    WAITING_CONFIRMATION,
+    COMPLETED,
     NO_DRIVERS_AVAILABLE,
     CANCELLED,
-    TIMEOUT
+    FAILED
 }
