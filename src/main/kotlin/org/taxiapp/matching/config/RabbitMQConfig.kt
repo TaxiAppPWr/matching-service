@@ -10,24 +10,56 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration
 class RabbitMQConfig(
-    @Value("\${rabbitmq.exchange.driver-matching}") private val exchangeName: String,
-    @Value("\${rabbitmq.queue.driver-matching}") private val queueName: String,
-    @Value("\${rabbitmq.routing-key.driver-matching}") private val routingKey: String
+    @Value("\${rabbitmq.exchange.driver-matching}") private val driverMatchingExchange: String,
+    @Value("\${rabbitmq.queue.driver-matching}") private val driverMatchingQueue: String,
+    @Value("\${rabbitmq.routing-key.driver-matching}") private val driverMatchingRoutingKey: String,
+    @Value("\${rabbitmq.exchange.ride-events}") private val rideEventsExchange: String,
+    @Value("\${rabbitmq.queue.ride-events}") private val rideEventsQueue: String,
+    @Value("\${rabbitmq.routing-key.ride-finished}") private val rideFinishedRoutingKey: String,
+    @Value("\${rabbitmq.routing-key.ride-cancelled}") private val rideCancelledRoutingKey: String,
+    @Value("\${rabbitmq.routing-key.matching-cancelled}") private val matchingCancelledRoutingKey: String
 ) {
 
     @Bean
-    fun driverMatchedExchange(): DirectExchange {
-        return DirectExchange(exchangeName)
+    fun driverMatchingExchange(): DirectExchange {
+        return DirectExchange(driverMatchingExchange)
     }
 
     @Bean
-    fun driverMatchedQueue(): Queue {
-        return QueueBuilder.durable(queueName).build()
+    fun rideEventsExchange(): TopicExchange {
+        return TopicExchange(rideEventsExchange)
     }
 
     @Bean
-    fun driverMatchedBinding(queue: Queue, exchange: DirectExchange): Binding {
-        return BindingBuilder.bind(queue).to(exchange).with(routingKey)
+    fun driverMatchingQueue(): Queue {
+        return QueueBuilder.durable(driverMatchingQueue).build()
+    }
+
+    @Bean
+    fun rideEventsQueue(): Queue {
+        return QueueBuilder.durable(rideEventsQueue).build()
+    }
+
+
+    @Bean
+    fun rideFinishedBinding(): Binding {
+        return BindingBuilder.bind(rideEventsQueue())
+            .to(rideEventsExchange())
+            .with(rideFinishedRoutingKey)
+    }
+
+    @Bean
+    fun rideCancelledBinding(): Binding {
+        return BindingBuilder.bind(rideEventsQueue())
+            .to(rideEventsExchange())
+            .with(rideCancelledRoutingKey)
+    }
+
+    @Bean
+    fun matchingCancelledBinding(): Binding {
+        return BindingBuilder.bind(driverMatchingQueue())
+            .to(driverMatchingExchange())
+            .with(matchingCancelledRoutingKey)
     }
 
     @Bean

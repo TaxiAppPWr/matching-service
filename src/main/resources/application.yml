@@ -26,10 +26,23 @@ matching:
 rabbitmq:
   exchange:
     driver-matching: driver.matching.exchange
+    ride-events: ride.events.exchange
   routing-key:
     driver-matching: driver.matching
+    ride-finished: ride.finished
+    ride-cancelled: ride.cancelled
+    matching-cancelled: matching.cancelled
   queue:
     driver-matching: driver.matching.queue
+    ride-events: driver.matching.ride.events.queue
+
+aws:
+  dynamodb:
+    region: eu-north-1
+    driver-status-table: driver-status
+    driver-connections-table: driver-connections
+  access_key: ${AWS_ACCESS_KEY}
+  secret_access_key: ${AWS_SECRET_ACCESS_KEY}
 
 logging:
   level:

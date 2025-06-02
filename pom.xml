@@ -52,7 +52,16 @@
             <artifactId>kotlin-stdlib-jdk8</artifactId>
             <version>${kotlin.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>aws.sdk.kotlin</groupId>
+            <artifactId>aws-core-jvm</artifactId>
+            <version>1.4.95</version>
+        </dependency>
+        <dependency>
+            <groupId>aws.sdk.kotlin</groupId>
+            <artifactId>dynamodb-jvm</artifactId>
+            <version>1.4.95</version>
+        </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
