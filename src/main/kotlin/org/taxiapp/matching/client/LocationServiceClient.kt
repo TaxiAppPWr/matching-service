@@ -13,14 +13,14 @@ import java.time.OffsetDateTime
 @Component
 class LocationServiceClient(
     webClientBuilder: WebClient.Builder,
-    @Value("\${services.driver-service.base-url}") private val baseUrl: String,
-    @Value("\${services.driver-service.timeout}") private val timeout: Long
+    @Value("\${services.location-service.base-url}") private val baseUrl: String,
+    @Value("\${services.location-service.timeout}") private val timeout: Long
 ) {
     private val webClient = webClientBuilder.baseUrl(baseUrl).build()
 
     suspend fun getNearbyDrivers(request: NearbyDriversRequest): List<NearbyDriver> {
         return webClient.post()
-            .uri("/drivers/nearby")
+            .uri("location-service/drivers/nearby")
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(request)
             .retrieve()

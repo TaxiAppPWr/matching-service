@@ -8,14 +8,14 @@ spring:
     password: guest
 
 server:
-  port: 8082
+  port: 85
 
 services:
-  driver-service:
-    base-url: http://localhost:8080
+  location-service:
+    base-url: http://localhost:86
     timeout: 5000
   messaging-service:
-    base-url: http://localhost:8081
+    base-url: http://localhost:87
 
 matching:
   max-drivers-to-try: 10
