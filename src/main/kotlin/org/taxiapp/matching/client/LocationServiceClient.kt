@@ -20,7 +20,7 @@ class LocationServiceClient(
 
     suspend fun getNearbyDrivers(request: NearbyDriversRequest): List<NearbyDriver> {
         return webClient.post()
-            .uri("location-service/drivers/nearby")
+            .uri("api/location/drivers/nearby")
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(request)
             .retrieve()

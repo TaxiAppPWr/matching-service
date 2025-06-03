@@ -14,7 +14,7 @@ services:
   location-service:
     base-url: http://localhost:86
     timeout: 5000
-  messaging-service:
+  notification-service:
     base-url: http://localhost:87
 
 matching:
@@ -26,8 +26,11 @@ matching:
 rabbitmq:
   exchange:
     driver-matching: driver.matching.exchange
+    ride: ride
   routing-key:
     driver-matching: driver.matching
+    ride:
+        cancel: ride.cancel
   queue:
     driver-matching: driver.matching.queue
 

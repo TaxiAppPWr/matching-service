@@ -5,19 +5,21 @@ import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
 import org.taxiapp.matching.dto.driver.DriverNotificationRequest
+import org.taxiapp.matching.dto.driver.EmailSendRequest
 
 @Component
-class MessagingServiceClient(
+class NotificationServiceClient(
     webClientBuilder: WebClient.Builder,
-    @Value("\${services.messaging-service.base-url}") private val baseUrl: String
+    @Value("\${services.notification-service.base-url}") private val baseUrl: String
 ) {
     private val webClient = webClientBuilder.baseUrl(baseUrl).build()
 
     suspend fun notifyDriver(request: DriverNotificationRequest) {
+        // TODO - change this to push notification
         webClient.post()
-            .uri("/notifications/driver")
+            .uri("api/notification/email")
             .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(request)
+            .bodyValue(EmailSendRequest("test@test.com", "proposed ride", "test"))
             .retrieve()
             .bodyToMono(Void::class.java)
             .subscribe()

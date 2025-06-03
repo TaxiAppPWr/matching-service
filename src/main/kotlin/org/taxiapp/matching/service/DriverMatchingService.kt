@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service
 import org.taxiapp.matching.dto.driver.*
 import org.taxiapp.matching.dto.session.MatchingSession
 import java.util.concurrent.ConcurrentHashMap
-import org.taxiapp.matching.client.MessagingServiceClient
+import org.taxiapp.matching.client.NotificationServiceClient
 import org.taxiapp.matching.client.LocationServiceClient
 import org.taxiapp.matching.dto.events.DriverMatchedEvent
 import org.taxiapp.matching.dto.events.MatchingFailedEvent
@@ -18,7 +18,7 @@ import java.time.LocalDateTime
 @Service
 class DriverMatchingService(
     private val driverServiceClient: LocationServiceClient,
-    private val messagingServiceClient: MessagingServiceClient,
+    private val messagingServiceClient: NotificationServiceClient,
     private val rabbitTemplate: RabbitTemplate,
     @Value("\${matching.max-drivers-to-try}") private val maxDriversToTry: Int,
     @Value("\${matching.search-radius-km}") private val searchRadius: Int,
