@@ -10,8 +10,9 @@ import org.taxiapp.matching.dto.session.MatchingSession
 import java.util.concurrent.ConcurrentHashMap
 import org.taxiapp.matching.client.NotificationServiceClient
 import org.taxiapp.matching.client.LocationServiceClient
-import org.taxiapp.matching.dto.events.DriverMatchedEvent
-import org.taxiapp.matching.dto.events.MatchingFailedEvent
+import org.taxiapp.matching.dto.dynamoDB.DriverStatus
+import org.taxiapp.matching.dto.events.out.DriverMatchedEvent
+import org.taxiapp.matching.dto.events.out.MatchingFailedEvent
 import org.taxiapp.matching.dto.matching.*
 import org.taxiapp.matching.repository.DriverRepository
 import java.time.LocalDateTime

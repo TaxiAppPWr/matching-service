@@ -21,13 +21,11 @@ import org.taxiapp.matching.dto.events.RideFinishedEvent
 class RabbitMQConfig(
     @Value("\${rabbitmq.exchange.driver-matching}") private val exchangeName: String,
     @Value("\${rabbitmq.exchange.ride}") private val rideExchangeName: String,
-    @Value("\${rabbitmq.queue.driver-matching}") private val queueName: String,
+    @Value("\${rabbitmq.queue.matching}") private val queueName: String,
     @Value("\${rabbitmq.routing-key.driver-matching}") private val routingKey: String,
     @Value("\${rabbitmq.routing-key.ride.cancel}") private val rideCanceledKey: String,
     @Value("\${rabbitmq.routing-key.ride.finished}") private val rideFinishedKey: String
-
 ) {
-
     @Bean
     fun driverMatchedExchange(): DirectExchange {
         return DirectExchange(exchangeName)

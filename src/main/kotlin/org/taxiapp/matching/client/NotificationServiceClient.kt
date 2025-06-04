@@ -14,7 +14,7 @@ class NotificationServiceClient(
     @Value("\${services.notification-service.base-url}") private val baseUrl: String
 ) {
     private val webClient = webClientBuilder.baseUrl(baseUrl).build()
-    private val logger = LoggerFactory.getLogger(MessagingServiceClient::class.java)
+    private val logger = LoggerFactory.getLogger(NotificationServiceClient::class.java)
 
     suspend fun notifyDriver(request: DriverNotificationRequest, connectionId: String) {
         // TODO implement proper driver call

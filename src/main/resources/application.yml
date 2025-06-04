@@ -26,15 +26,14 @@ matching:
 rabbitmq:
   exchange:
     driver-matching: driver.matching.exchange
+    ride: ride
   routing-key:
     driver-matching: driver.matching
-    matching-cancelled: matching.cancelled
     ride:
         finished: ride.finished
         cancel: ride.cancel
   queue:
-    driver-matching: driver.matching.queue
-    ride-events: driver.matching.ride.events.queue
+    matching: driver.matching.queue
 
 aws:
   dynamodb:

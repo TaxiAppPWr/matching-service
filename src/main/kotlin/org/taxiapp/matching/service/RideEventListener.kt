@@ -9,10 +9,13 @@ import org.taxiapp.matching.dto.events.`in`.RideFinishedEvent
 import org.taxiapp.matching.repository.DriverRepository
 
 @Component
-class RideEventListener(private val driverRepository: DriverRepository) {
+class RideEventListener(
+    private val driverRepository: DriverRepository,
+    private val driverMatchingService: DriverMatchingService
+) {
     private val logger = LoggerFactory.getLogger(RideEventListener::class.java)
 
-    @RabbitListener(queues = ["\${rabbitmq.queue.ride-events}"])
+    @RabbitListener(queues = ["\${rabbitmq.queue.matching}"])
     fun handleRideFinished(event: RideFinishedEvent) {
         logger.info("Received ride finished event: $event")
 
@@ -24,7 +27,7 @@ class RideEventListener(private val driverRepository: DriverRepository) {
         }
     }
 
-    @RabbitListener(queues = ["\${rabbitmq.queue.ride-events}"])
+    @RabbitListener(queues = ["\${rabbitmq.queue.matching}"])
     fun handleCancelledFinished(event: RideCancelledEvent) {
         logger.info("Received ride cancelled event: $event")
 
@@ -33,6 +36,12 @@ class RideEventListener(private val driverRepository: DriverRepository) {
                 driverRepository.deleteDriverStatus(driverId)
             }
             logger.info("Removed driver $driverId from active rides after ride ${event.rideId} cancelled")
+        }
+
+        event.rideId.let { rideId ->
+            runBlocking {
+                driverMatchingService.cancelMatching(rideId)
+            }
         }
     }
 }
