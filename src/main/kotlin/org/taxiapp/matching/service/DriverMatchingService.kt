@@ -13,12 +13,14 @@ import org.taxiapp.matching.client.LocationServiceClient
 import org.taxiapp.matching.dto.events.DriverMatchedEvent
 import org.taxiapp.matching.dto.events.MatchingFailedEvent
 import org.taxiapp.matching.dto.matching.*
+import org.taxiapp.matching.repository.DriverRepository
 import java.time.LocalDateTime
 
 @Service
 class DriverMatchingService(
-    private val driverServiceClient: LocationServiceClient,
+    private val locationServiceClient: LocationServiceClient,
     private val messagingServiceClient: NotificationServiceClient,
+    private val driverRepository: DriverRepository,
     private val rabbitTemplate: RabbitTemplate,
     @Value("\${matching.max-drivers-to-try}") private val maxDriversToTry: Int,
     @Value("\${matching.search-radius-km}") private val searchRadius: Int,
@@ -57,7 +59,7 @@ class DriverMatchingService(
         return MatchingStartedResponse(rideId = rideId)
     }
 
-    fun confirmDriver(confirmation: DriverConfirmationRequest): Boolean {
+    suspend fun confirmDriver(confirmation: DriverConfirmationRequest): Boolean {
         val session = activeMatchings[confirmation.rideId] ?: return false
 
         // Check if we're waiting for this specific driver
@@ -74,6 +76,12 @@ class DriverMatchingService(
 
             val driver = session.availableDrivers.find { it.driverId == confirmation.driverId }
             if (driver != null) {
+                // Update driver status to RIDING_CURRENTLY
+                driverRepository.saveDriverStatus(
+                    driverId = driver.driverId,
+                    status = DriverStatus.RIDING_CURRENTLY,
+                )
+
                 session.status = MatchingStatus.COMPLETED
                 session.result = MatchingResult(
                     driverId = driver.driverId,
@@ -86,6 +94,7 @@ class DriverMatchingService(
             }
         } else {
             logger.info("Driver ${confirmation.driverId} declined matching for ride ${confirmation.rideId}")
+            driverRepository.deleteDriverStatus(confirmation.driverId)
             session.driverResponded = true
             session.lastDriverAccepted = false
         }
@@ -107,8 +116,12 @@ class DriverMatchingService(
         )
     }
 
-    fun cancelMatching(rideId: Long): Boolean {
+    suspend fun cancelMatching(rideId: Long): Boolean {
         val session = activeMatchings[rideId] ?: return false
+
+        session.currentDriverId?.let { driverId ->
+            driverRepository.deleteDriverStatus(driverId)
+        }
 
         session.status = MatchingStatus.CANCELLED
         session.lastUpdateAt = LocalDateTime.now()
@@ -121,7 +134,6 @@ class DriverMatchingService(
     private suspend fun performMatching(session: MatchingSession) = coroutineScope {
         logger.info("Starting driver search for ride ${session.request.rideId}")
 
-        // Get nearby drivers
         val nearbyDrivers = getNearbyDrivers(session.request)
 
         if (nearbyDrivers.isEmpty()) {
@@ -142,15 +154,35 @@ class DriverMatchingService(
                 break
             }
 
+            // Check if driver is already busy
+            val driverStatus = driverRepository.getDriverStatus(driver.driverId)
+            if (driverStatus != null) {
+                logger.info("Driver ${driver.driverId} is already busy with status ${driverStatus.status}, skipping")
+                continue
+            }
+
+            // Get driver connection ID from read-only table
+            val connectionId = driverRepository.getDriverConnection(driver.driverId)
+            if (connectionId == null) {
+                logger.warn("No connection ID found for driver ${driver.driverId}, skipping")
+                continue
+            }
+
             session.currentDriverId = driver.driverId
             session.attemptedDrivers++
             session.status = MatchingStatus.WAITING_CONFIRMATION
             session.driverResponded = false
             session.lastUpdateAt = LocalDateTime.now()
 
+            // Save driver status as PENDING_REQUEST
+            driverRepository.saveDriverStatus(
+                driverId = driver.driverId,
+                status = DriverStatus.PENDING_REQUEST,
+            )
+
             logger.info("Notifying driver ${driver.driverId} for ride ${session.request.rideId}")
 
-            // Notify driver
+            // Notify driver with connectionId
             val notificationRequest = DriverNotificationRequest(
                 driverId = driver.driverId,
                 rideId = session.request.rideId,
@@ -162,7 +194,7 @@ class DriverMatchingService(
             )
 
             try {
-                messagingServiceClient.notifyDriver(notificationRequest)
+                messagingServiceClient.notifyDriver(notificationRequest, connectionId)
 
                 // Wait for driver confirmation
                 val confirmed = waitForDriverConfirmation(session)
@@ -170,6 +202,9 @@ class DriverMatchingService(
                 if (confirmed) {
                     // Driver accepted, matching complete
                     return@coroutineScope
+                } else {
+                    // Timeout - remove driver status
+                    driverRepository.deleteDriverStatus(driver.driverId)
                 }
 
                 // Driver declined or timeout, try next
@@ -177,6 +212,7 @@ class DriverMatchingService(
 
             } catch (e: Exception) {
                 logger.error("Error notifying driver ${driver.driverId}", e)
+                driverRepository.deleteDriverStatus(driver.driverId)
             }
 
             // Small delay before trying next driver
@@ -192,59 +228,59 @@ class DriverMatchingService(
         activeMatchings.remove(session.request.rideId)
     }
 
-    private suspend fun waitForDriverConfirmation(session: MatchingSession): Boolean {
-        val timeoutMillis = confirmationTimeout * 1000
-        val startTime = System.currentTimeMillis()
+private suspend fun waitForDriverConfirmation(session: MatchingSession): Boolean {
+    val timeoutMillis = confirmationTimeout * 1000
+    val startTime = System.currentTimeMillis()
 
-        while (System.currentTimeMillis() - startTime < timeoutMillis) {
-            if (session.driverResponded) {
-                return session.lastDriverAccepted
-            }
-
-            if (session.status == MatchingStatus.CANCELLED || session.status == MatchingStatus.COMPLETED) {
-                return session.status == MatchingStatus.COMPLETED
-            }
-
-            delay(100) // Check every 100ms
+    while (System.currentTimeMillis() - startTime < timeoutMillis) {
+        if (session.driverResponded) {
+            return session.lastDriverAccepted
         }
+
+        if (session.status == MatchingStatus.CANCELLED || session.status == MatchingStatus.COMPLETED) {
+            return session.status == MatchingStatus.COMPLETED
+        }
+
+        delay(100) // Check every 100ms
+    }
 
         logger.info("Timeout waiting for driver ${session.currentDriverId} confirmation")
         return false
     }
 
-    private suspend fun getNearbyDrivers(request: MatchingRequest): List<NearbyDriver> {
-        val nearbyRequest = NearbyDriversRequest(
-            latitude = request.pickupLatitude,
-            longitude = request.pickupLongitude,
-            radius = searchRadius,
-            limit = maxDriversToTry * 2
-        )
+private suspend fun getNearbyDrivers(request: MatchingRequest): List<NearbyDriver> {
+    val nearbyRequest = NearbyDriversRequest(
+        latitude = request.pickupLatitude,
+        longitude = request.pickupLongitude,
+        radius = searchRadius,
+        limit = maxDriversToTry * 2
+    )
 
-        return driverServiceClient.getNearbyDrivers(nearbyRequest)
-            .filter { it.isActive }
-            .sortedBy { it.distance }
-            .take(maxDriversToTry)
-    }
+    return locationServiceClient.getNearbyDrivers(nearbyRequest)
+        .filter { it.isActive }
+        .sortedBy { it.distance }
+        .take(maxDriversToTry)
+}
 
-    private fun publishDriverMatched(session: MatchingSession, driver: NearbyDriver) {
-        val event = DriverMatchedEvent(
-            rideId = session.request.rideId,
-            driverId = driver.driverId,
-            matchedAt = LocalDateTime.now(),
-        )
+private fun publishDriverMatched(session: MatchingSession, driver: NearbyDriver) {
+    val event = DriverMatchedEvent(
+        rideId = session.request.rideId,
+        driverId = driver.driverId,
+        matchedAt = LocalDateTime.now(),
+    )
 
-        rabbitTemplate.convertAndSend(exchangeName, routingKey, event)
-        logger.info("Published driver matched event: $event")
-    }
+    rabbitTemplate.convertAndSend(exchangeName, routingKey, event)
+    logger.info("Published driver matched event: $event")
+}
 
-    private fun publishMatchingFailed(session: MatchingSession, reason: String) {
-        val event = MatchingFailedEvent(
-            rideId = session.request.rideId,
-            reason = reason,
-            failedAt = LocalDateTime.now()
-        )
+private fun publishMatchingFailed(session: MatchingSession, reason: String) {
+    val event = MatchingFailedEvent(
+        rideId = session.request.rideId,
+        reason = reason,
+        failedAt = LocalDateTime.now()
+    )
 
-        rabbitTemplate.convertAndSend(exchangeName, "$routingKey.failed", event)
-        logger.info("Published matching failed event: $event")
-    }
+    rabbitTemplate.convertAndSend(exchangeName, "$routingKey.failed", event)
+    logger.info("Published matching failed event: $event")
+}
 }

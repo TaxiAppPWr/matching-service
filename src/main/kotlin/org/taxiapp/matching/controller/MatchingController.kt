@@ -7,13 +7,15 @@ import org.springframework.web.bind.annotation.*
 import org.taxiapp.matching.dto.driver.DriverConfirmationRequest
 import org.taxiapp.matching.dto.matching.MatchingRequest
 import org.taxiapp.matching.dto.matching.MatchingStartedResponse
+import org.taxiapp.matching.repository.DriverRepository
 import org.taxiapp.matching.service.DriverMatchingService
 
 
 @RestController
 @RequestMapping("/api/matching")
 class MatchingController(
-    private val matchingService: DriverMatchingService
+    private val matchingService: DriverMatchingService,
+    private val driverRepository: DriverRepository
 ) {
 
     @PostMapping("/find-driver")
@@ -23,7 +25,7 @@ class MatchingController(
     }
 
     @PostMapping("/confirm")
-    fun confirmDriver(@Valid @RequestBody confirmation: DriverConfirmationRequest): ResponseEntity<Map<String, Any>> {
+    suspend fun confirmDriver(@Valid @RequestBody confirmation: DriverConfirmationRequest): ResponseEntity<Map<String, Any>> {
         val confirmed = matchingService.confirmDriver(confirmation)
 
         return if (confirmed) {
@@ -54,7 +56,7 @@ class MatchingController(
     }
 
     @DeleteMapping("/{rideId}")
-    fun cancelMatching(@PathVariable rideId: Long): ResponseEntity<Map<String, Any>> {
+    suspend fun cancelMatching(@PathVariable rideId: Long): ResponseEntity<Map<String, Any>> {
         val cancelled = matchingService.cancelMatching(rideId)
 
         return if (cancelled) {
@@ -76,5 +78,22 @@ class MatchingController(
             "status" to "UP",
             "service" to "driver-matching-service"
         ))
+    }
+
+    @GetMapping("/health/dynamodb")
+    suspend fun checkDynamoDb(): ResponseEntity<Map<String, Any>> {
+         try {
+            driverRepository.getDriverStatus("")
+             return ResponseEntity.ok(mapOf(
+                "status" to "UP",
+                "service" to "DynamoDB"
+            ))
+        } catch (e: Exception) {3
+             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(mapOf(
+                 "status" to "DOWN",
+                 "service" to "DynamoDB",
+                 "error" to e.message!!
+             ))
+        }
     }
 }

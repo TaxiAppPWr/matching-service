@@ -23,7 +23,8 @@ class RabbitMQConfig(
     @Value("\${rabbitmq.exchange.ride}") private val rideExchangeName: String,
     @Value("\${rabbitmq.queue.driver-matching}") private val queueName: String,
     @Value("\${rabbitmq.routing-key.driver-matching}") private val routingKey: String,
-    @Value("\${rabbitmq.routing-key.ride.cancel}") private val rideCanceledKey: String
+    @Value("\${rabbitmq.routing-key.ride.cancel}") private val rideCanceledKey: String,
+    @Value("\${rabbitmq.routing-key.ride.finished}") private val rideFinishedKey: String
 
 ) {
 
@@ -37,9 +38,8 @@ class RabbitMQConfig(
         return DirectExchange(rideExchangeName)
     }
 
-
     @Bean
-    fun driverMatchedQueue(): Queue {
+    fun matchingServiceQueue(): Queue {
         return QueueBuilder.durable(queueName).build()
     }
 
@@ -51,6 +51,11 @@ class RabbitMQConfig(
     @Bean
     fun rideCanceledBinding(queue: Queue, @Qualifier("rideExchange") exchange: DirectExchange): Binding {
         return BindingBuilder.bind(queue).to(exchange).with(rideCanceledKey)
+    }
+
+    @Bean
+    fun rideFinishedBinding(queue: Queue, @Qualifier("rideExchange") exchange: DirectExchange): Binding {
+        return BindingBuilder.bind(queue).to(exchange).with(rideFinishedKey)
     }
 
     @Bean

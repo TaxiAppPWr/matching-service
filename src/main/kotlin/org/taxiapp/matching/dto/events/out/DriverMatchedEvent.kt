@@ -1,4 +1,4 @@
-package org.taxiapp.matching.dto.events
+package org.taxiapp.matching.dto.events.out
 
 import java.time.LocalDateTime
 
