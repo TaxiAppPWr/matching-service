@@ -4,6 +4,7 @@ import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import org.taxiapp.matching.dto.driver.DriverConfirmation
 import org.taxiapp.matching.dto.driver.DriverConfirmationRequest
 import org.taxiapp.matching.dto.matching.MatchingRequest
 import org.taxiapp.matching.dto.matching.MatchingStartedResponse
@@ -25,7 +26,8 @@ class MatchingController(
     }
 
     @PostMapping("/confirm")
-    suspend fun confirmDriver(@Valid @RequestBody confirmation: DriverConfirmationRequest): ResponseEntity<Map<String, Any>> {
+    suspend fun confirmDriver(@RequestAttribute(name = "userId", required = true) userId: String, @Valid @RequestBody request: DriverConfirmationRequest): ResponseEntity<Map<String, Any>> {
+        val confirmation = DriverConfirmation(request.rideId, userId, request.accepted)
         val confirmed = matchingService.confirmDriver(confirmation)
 
         return if (confirmed) {
