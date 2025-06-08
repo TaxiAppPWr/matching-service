@@ -112,6 +112,11 @@
             <artifactId>kotlinx-coroutines-reactor</artifactId>
             <version>1.7.3</version>
         </dependency>
+        <dependency>
+            <groupId>io.awspring.cloud</groupId>
+            <artifactId>spring-cloud-aws-starter-parameter-store</artifactId>
+            <version>3.3.1</version>
+        </dependency>
     </dependencies>
 
     <build>

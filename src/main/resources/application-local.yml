@@ -6,12 +6,9 @@ spring:
     port: 5672
     username: guest
     password: guest
-  config:
-    import: "aws-secretsmanager:/matching/"
-  cloud:
-    aws:
-      parameterstore:
-        region: us-east-1
+
+server:
+  port: 85
 
 services:
   location-service:
@@ -40,11 +37,9 @@ rabbitmq:
 
 aws:
   dynamodb:
-    region: us-east-1
+    region: eu-north-1
     driver-status-table: driver-status
     driver-connections-table: driver-connections
-  websocket:
-    url: wss://example-websocket-url
   access_key: ${AWS_ACCESS_KEY}
   secret_access_key: ${AWS_SECRET_ACCESS_KEY}
 

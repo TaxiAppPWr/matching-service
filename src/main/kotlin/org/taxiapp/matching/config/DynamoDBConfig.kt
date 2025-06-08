@@ -18,10 +18,6 @@ class DynamoDbConfig(
     fun dynamoDbClient(): DynamoDbClient = runBlocking {
         DynamoDbClient {
             this.region = this@DynamoDbConfig.region
-            credentialsProvider = StaticCredentialsProvider {
-                accessKeyId = awsAccessKey
-                secretAccessKey = awsSecretAccessKey
-            }
         }
     }
 }
