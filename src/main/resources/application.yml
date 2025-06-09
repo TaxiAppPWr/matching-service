@@ -46,7 +46,7 @@ aws:
   websocket-api:
     id: "api_id"
     stage: "$default"
-  access_key: ${AWS_ACCESS_KEY}
+  access_key: ${AWS_ACCESS_KEY_ID}
   secret_access_key: ${AWS_SECRET_ACCESS_KEY}
 
 logging:
