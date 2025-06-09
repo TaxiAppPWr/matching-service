@@ -43,8 +43,9 @@ aws:
     region: us-east-1
     driver-status-table: driver-status
     driver-connections-table: driver-connections
-  websocket:
-    url: wss://example-websocket-url
+  websocket-api:
+    id: "api_id"
+    stage: "$default"
   access_key: ${AWS_ACCESS_KEY}
   secret_access_key: ${AWS_SECRET_ACCESS_KEY}
 
