@@ -60,7 +60,7 @@ class DriverMatchingService(
         return MatchingStartedResponse(rideId = rideId)
     }
 
-    suspend fun confirmDriver(confirmation: DriverConfirmationRequest): Boolean {
+    suspend fun confirmDriver(confirmation: DriverConfirmation): Boolean {
         val session = activeMatchings[confirmation.rideId] ?: return false
 
         // Check if we're waiting for this specific driver
@@ -187,9 +187,11 @@ class DriverMatchingService(
             val notificationRequest = DriverNotificationRequest(
                 driverId = driver.driverId,
                 rideId = session.request.rideId,
+                pickupAddress = session.request.pickupAddress,
                 pickupLongitude = session.request.pickupLongitude,
                 pickupLatitude = session.request.pickupLatitude,
-                dropoffLongitude = session.request.pickupLongitude,
+                dropoffAddress = session.request.dropoffAddress,
+                dropoffLongitude = session.request.dropoffLongitude,
                 dropoffLatitude = session.request.dropoffLatitude,
                 estimatedPrice = session.request.estimatedPrice,
             )

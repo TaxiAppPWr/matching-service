@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.PositiveOrZero
 
-data class DriverConfirmationRequest(
+data class DriverConfirmation(
     @field:NotNull @field:PositiveOrZero
     val rideId: Long,
 
@@ -15,3 +15,13 @@ data class DriverConfirmationRequest(
     val accepted: Boolean,
 
 )
+
+data class DriverConfirmationRequest(
+    @field:NotNull @field:PositiveOrZero
+    val rideId: Long,
+
+    @field:NotNull
+    val accepted: Boolean,
+
+    )
+
