@@ -2,7 +2,7 @@ package org.taxiapp.matching.dto.driver
 
 import java.math.BigDecimal
 
-data class DriverNotificationRequest(
+data class DriverRideOfferNotification(
     val driverId: String,
     val rideId: Long,
     val pickupAddress: String,
@@ -12,4 +12,5 @@ data class DriverNotificationRequest(
     val dropoffLatitude: Double,
     val dropoffLongitude: Double,
     val estimatedPrice: BigDecimal,
+    val eventType: String = "RIDE_OFFER"
 )

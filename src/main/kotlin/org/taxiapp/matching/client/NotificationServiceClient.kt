@@ -1,30 +1,43 @@
 package org.taxiapp.matching.client
 
+import aws.sdk.kotlin.services.apigatewaymanagementapi.ApiGatewayManagementClient
+import aws.sdk.kotlin.services.apigatewaymanagementapi.model.PostToConnectionRequest
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
-import org.springframework.web.reactive.function.client.WebClient
-import org.taxiapp.matching.dto.driver.DriverNotificationRequest
-import org.taxiapp.matching.dto.driver.EmailSendRequest
+import org.taxiapp.matching.dto.driver.DriverCancellationNotification
+import org.taxiapp.matching.dto.driver.DriverRideOfferNotification
+
 
 @Component
 class NotificationServiceClient(
-    webClientBuilder: WebClient.Builder,
-    @Value("\${services.notification-service.base-url}") private val baseUrl: String
+    private val mapper: ObjectMapper,
+    private val apiManagementClient: ApiGatewayManagementClient,
 ) {
-    private val webClient = webClientBuilder.baseUrl(baseUrl).build()
     private val logger = LoggerFactory.getLogger(NotificationServiceClient::class.java)
 
-    suspend fun notifyDriver(request: DriverNotificationRequest, connectionId: String) {
-        // TODO implement proper driver call
-        logger.info("Calling API Gateway at POST https://{api-id}.execute-api.us-east-1.amazonaws.com/{stage}/@connections/${connectionId}")
-        webClient.post()
-            .uri("api/notification/email")
-            .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(request)
-            .retrieve()
-            .bodyToMono(Void::class.java)
-            .subscribe()
+    suspend fun sendRidePropositionNotification(request: DriverRideOfferNotification, connectionId: String) {
+        val data = mapper.writeValueAsString(request)
+        logger.info("Sending ride proposition event to driver with connectionId: $connectionId")
+        notifyDriver(data, connectionId)
+    }
+
+    suspend fun sendRideCancelledNotification(request: DriverCancellationNotification, connectionId: String) {
+        val data = mapper.writeValueAsString(request)
+        logger.info("Sending ride cancelled event to driver with connectionId: $connectionId")
+        notifyDriver(data, connectionId)
+    }
+
+    private suspend fun notifyDriver(data: String, connectionId: String) {
+        val request = PostToConnectionRequest {
+            this.connectionId = connectionId
+            this.data = data.toByteArray(Charsets.UTF_8)
+        }
+        try {
+            apiManagementClient.postToConnection(request)
+            logger.info("Notification sent to driver with connectionId: $connectionId")
+        } catch (e: Exception) {
+            logger.error("Failed to send notification to driver with connectionId: $connectionId", e)
+        }
     }
 }

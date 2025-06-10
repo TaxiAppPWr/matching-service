@@ -39,6 +39,7 @@ rabbitmq:
     matching: driver.matching.queue
 
 aws:
+  region: us-east-1
   dynamodb:
     region: us-east-1
     driver-status-table: driver-status

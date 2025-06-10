@@ -28,7 +28,8 @@ class DriverMatchingService(
     @Value("\${matching.driver-confirmation-timeout-seconds}") private val confirmationTimeout: Long,
     @Value("\${matching.delay-between-attempts-ms}") private val delayBetweenAttempts: Long,
     @Value("\${rabbitmq.exchange.driver-matching}") private val exchangeName: String,
-    @Value("\${rabbitmq.routing-key.driver-matching}") private val routingKey: String
+    @Value("\${rabbitmq.routing-key.driver-matching}") private val routingKey: String,
+    private val notificationServiceClient: NotificationServiceClient
 ) {
     private val logger = LoggerFactory.getLogger(DriverMatchingService::class.java)
     private val activeMatchings = ConcurrentHashMap<Long, MatchingSession>()
@@ -122,6 +123,19 @@ class DriverMatchingService(
 
         session.currentDriverId?.let { driverId ->
             driverRepository.deleteDriverStatus(driverId)
+            runBlocking {
+                val connectionId = driverRepository.getDriverConnection(driverId)
+                connectionId?.let { connectionId ->
+                    val request = DriverCancellationNotification(
+                        driverId = driverId,
+                        rideId = rideId
+                    )
+                    notificationServiceClient.sendRideCancelledNotification(
+                        request = request,
+                        connectionId = connectionId
+                    )
+                }
+            }
         }
 
         session.status = MatchingStatus.CANCELLED
@@ -183,8 +197,7 @@ class DriverMatchingService(
 
             logger.info("Notifying driver ${driver.driverId} for ride ${session.request.rideId}")
 
-            // Notify driver with connectionId
-            val notificationRequest = DriverNotificationRequest(
+            val notificationRequest = DriverRideOfferNotification(
                 driverId = driver.driverId,
                 rideId = session.request.rideId,
                 pickupAddress = session.request.pickupAddress,
@@ -197,7 +210,7 @@ class DriverMatchingService(
             )
 
             try {
-                messagingServiceClient.notifyDriver(notificationRequest, connectionId)
+                messagingServiceClient.sendRidePropositionNotification(notificationRequest, connectionId)
 
                 // Wait for driver confirmation
                 val confirmed = waitForDriverConfirmation(session)

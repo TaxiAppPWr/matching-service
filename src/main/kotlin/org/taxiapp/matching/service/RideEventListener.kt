@@ -4,6 +4,8 @@ import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.amqp.rabbit.annotation.RabbitListener
 import org.springframework.stereotype.Component
+import org.taxiapp.matching.client.NotificationServiceClient
+import org.taxiapp.matching.dto.driver.DriverCancellationNotification
 import org.taxiapp.matching.dto.events.`in`.RideCancelledEvent
 import org.taxiapp.matching.dto.events.`in`.RideFinishedEvent
 import org.taxiapp.matching.repository.DriverRepository
@@ -11,7 +13,8 @@ import org.taxiapp.matching.repository.DriverRepository
 @Component
 class RideEventListener(
     private val driverRepository: DriverRepository,
-    private val driverMatchingService: DriverMatchingService
+    private val driverMatchingService: DriverMatchingService,
+    private val notificationServiceClient: NotificationServiceClient
 ) {
     private val logger = LoggerFactory.getLogger(RideEventListener::class.java)
 
@@ -30,6 +33,20 @@ class RideEventListener(
     @RabbitListener(queues = ["\${rabbitmq.queue.matching}"])
     fun handleCancelledFinished(event: RideCancelledEvent) {
         logger.info("Received ride cancelled event: $event")
+
+        runBlocking {
+            val connectionId = driverRepository.getDriverConnection(event.driverId)
+            connectionId?.let { connectionId ->
+                val request = DriverCancellationNotification(
+                    driverId = event.driverId,
+                    rideId = event.rideId
+                )
+                notificationServiceClient.sendRideCancelledNotification(
+                    request = request,
+                    connectionId = connectionId
+                )
+            }
+        }
 
         event.driverId.let { driverId ->
             runBlocking {
