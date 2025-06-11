@@ -14,8 +14,8 @@ import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.taxiapp.matching.dto.events.CancelRideEvent
-import org.taxiapp.matching.dto.events.RideFinishedEvent
+import org.taxiapp.matching.dto.events.`in`.RideCancelledEvent
+import org.taxiapp.matching.dto.events.`in`.RideFinishedEvent
 
 @Configuration
 class RabbitMQConfig(
@@ -66,7 +66,7 @@ class RabbitMQConfig(
         val typeMapper = DefaultJackson2JavaTypeMapper().apply {
             setTrustedPackages("*")
             idClassMapping = mapOf(
-                "taxiapp.ride.dto.event.CancelRideEvent" to CancelRideEvent::class.java,
+                "taxiapp.ride.dto.event.CancelRideEvent" to RideCancelledEvent::class.java,
                 "taxiapp.ride.dto.event.RideFinishedEvent" to RideFinishedEvent::class.java
             )
         }
