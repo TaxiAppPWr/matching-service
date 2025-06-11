@@ -22,7 +22,7 @@ services:
 
 matching:
   max-drivers-to-try: 10
-  search-radius-km: 10
+  search-radius-km: 50
   driver-confirmation-timeout-seconds: 30
   delay-between-attempts-ms: 1000
 
@@ -43,7 +43,7 @@ aws:
   dynamodb:
     region: us-east-1
     driver-status-table: driver-status
-    driver-connections-table: driver-connections
+    driver-connections-table: websocket-connections
   websocket-api:
     id: "api_id"
     stage: "$default"
