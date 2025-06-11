@@ -26,7 +26,7 @@ class MatchingController(
     }
 
     @PostMapping("/confirm")
-    suspend fun confirmDriver(@RequestAttribute(name = "userId", required = true) userId: String, @Valid @RequestBody request: DriverConfirmationRequest): ResponseEntity<Map<String, Any>> {
+    suspend fun confirmDriver(@RequestHeader("username") userId: String, @Valid @RequestBody request: DriverConfirmationRequest): ResponseEntity<Map<String, Any>> {
         val confirmation = DriverConfirmation(request.rideId, userId, request.accepted)
         val confirmed = matchingService.confirmDriver(confirmation)
 
@@ -90,7 +90,7 @@ class MatchingController(
                 "status" to "UP",
                 "service" to "DynamoDB"
             ))
-        } catch (e: Exception) {3
+        } catch (e: Exception) {
              return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(mapOf(
                  "status" to "DOWN",
                  "service" to "DynamoDB",
