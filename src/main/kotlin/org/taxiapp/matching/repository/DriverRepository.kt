@@ -71,7 +71,7 @@ class DriverRepository(
         val request = QueryRequest {
             indexName = driverIndexName
             tableName = driverConnectionsTable
-            keyConditionExpression = "driverid = :driverId"
+            keyConditionExpression = "driverId = :driverId"
             expressionAttributeValues = mapOf(":driverId" to AttributeValue.S(driverId))
         }
 
