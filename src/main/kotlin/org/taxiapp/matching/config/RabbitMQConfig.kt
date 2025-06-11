@@ -41,10 +41,10 @@ class RabbitMQConfig(
         return QueueBuilder.durable(queueName).build()
     }
 
-    @Bean
-    fun driverMatchedBinding(queue: Queue, @Qualifier("driverMatchedExchange") exchange: DirectExchange): Binding {
-        return BindingBuilder.bind(queue).to(exchange).with(routingKey)
-    }
+//    @Bean
+//    fun driverMatchedBinding(queue: Queue, @Qualifier("driverMatchedExchange") exchange: DirectExchange): Binding {
+//        return BindingBuilder.bind(queue).to(exchange).with(routingKey)
+//    }
 
     @Bean
     fun rideCanceledBinding(queue: Queue, @Qualifier("rideExchange") exchange: DirectExchange): Binding {
