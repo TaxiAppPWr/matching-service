@@ -22,7 +22,7 @@ class RideEventListener(
     fun handleRideFinished(event: RideFinishedEvent) {
         logger.info("Received ride finished event: $event")
 
-        event.driverId.let { driverId ->
+        event.driverUsername.let { driverId ->
             runBlocking {
                 driverRepository.deleteDriverStatus(driverId)
             }
