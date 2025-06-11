@@ -44,6 +44,7 @@ aws:
     region: us-east-1
     driver-status-table: driver-status
     driver-connections-table: websocket-connections
+    driver-connections-index: DriverIndex
   websocket-api:
     id: "api_id"
     stage: "$default"
