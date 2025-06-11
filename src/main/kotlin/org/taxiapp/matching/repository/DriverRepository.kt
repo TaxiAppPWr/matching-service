@@ -72,7 +72,7 @@ class DriverRepository(
             indexName = driverIndexName
             tableName = driverConnectionsTable
             keyConditionExpression = "driverid = :driverId"
-            expressionAttributeValues = mapOf("driverId" to AttributeValue.S(driverId))
+            expressionAttributeValues = mapOf(":driverId" to AttributeValue.S(driverId))
         }
 
         val response = dynamoDbClient.query(request)
