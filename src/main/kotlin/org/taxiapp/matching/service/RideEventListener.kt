@@ -36,25 +36,27 @@ class RideEventListener(
     fun handleCancelledFinished(event: RideCancelledEvent) {
         logger.info("Received ride cancelled event: $event")
 
-        runBlocking {
-            val connectionId = driverRepository.getDriverConnection(event.driverId)
-            connectionId?.let { connectionId ->
-                val request = DriverCancellationNotification(
-                    driverId = event.driverId,
-                    rideId = event.rideId
-                )
-                notificationServiceClient.sendRideCancelledNotification(
-                    request = request,
-                    connectionId = connectionId
-                )
-            }
-        }
-
-        event.driverId.let { driverId ->
+        if (!event.driverId.isBlank()) {
             runBlocking {
-                driverRepository.deleteDriverStatus(driverId)
+                val connectionId = driverRepository.getDriverConnection(event.driverId)
+                connectionId?.let { connectionId ->
+                    val request = DriverCancellationNotification(
+                        driverId = event.driverId,
+                        rideId = event.rideId
+                    )
+                    notificationServiceClient.sendRideCancelledNotification(
+                        request = request,
+                        connectionId = connectionId
+                    )
+                }
             }
-            logger.info("Removed driver $driverId from active rides after ride ${event.rideId} cancelled")
+
+            event.driverId.let { driverId ->
+                runBlocking {
+                    driverRepository.deleteDriverStatus(driverId)
+                }
+                logger.info("Removed driver $driverId from active rides after ride ${event.rideId} cancelled")
+            }
         }
 
         event.rideId.let { rideId ->
