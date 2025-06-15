@@ -34,8 +34,8 @@ class NotificationServiceClient(
             this.data = data.toByteArray(Charsets.UTF_8)
         }
         try {
-            apiManagementClient.postToConnection(request)
-            logger.info("Notification sent to driver with connectionId: $connectionId")
+            val response = apiManagementClient.postToConnection(request)
+            logger.info("Notification sent to driver with connectionId: $connectionId - Response: $response")
         } catch (e: Exception) {
             logger.error("Failed to send notification to driver with connectionId: $connectionId", e)
         }

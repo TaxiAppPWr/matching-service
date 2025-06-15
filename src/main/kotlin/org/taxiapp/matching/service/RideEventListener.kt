@@ -2,6 +2,7 @@ package org.taxiapp.matching.service
 
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
+import org.springframework.amqp.rabbit.annotation.RabbitHandler
 import org.springframework.amqp.rabbit.annotation.RabbitListener
 import org.springframework.stereotype.Component
 import org.taxiapp.matching.client.NotificationServiceClient
@@ -11,6 +12,7 @@ import org.taxiapp.matching.dto.events.`in`.RideFinishedEvent
 import org.taxiapp.matching.repository.DriverRepository
 
 @Component
+@RabbitListener(queues = ["\${rabbitmq.queue.matching}"])
 class RideEventListener(
     private val driverRepository: DriverRepository,
     private val driverMatchingService: DriverMatchingService,
@@ -18,7 +20,7 @@ class RideEventListener(
 ) {
     private val logger = LoggerFactory.getLogger(RideEventListener::class.java)
 
-    @RabbitListener(queues = ["\${rabbitmq.queue.matching}"])
+    @RabbitHandler
     fun handleRideFinished(event: RideFinishedEvent) {
         logger.info("Received ride finished event: $event")
 
@@ -30,7 +32,7 @@ class RideEventListener(
         }
     }
 
-    @RabbitListener(queues = ["\${rabbitmq.queue.matching}"])
+    @RabbitHandler
     fun handleCancelledFinished(event: RideCancelledEvent) {
         logger.info("Received ride cancelled event: $event")
 
